@@ -23,8 +23,8 @@ from scipy.constants import c
 import matplotlib.pyplot as plt
 
 
-# SlipPy libs
-from ..slippy import GeoTrans
+# SeiSlip libs
+from ..seislip import GeoTrans
 from ..utils.quadtree import QTree
 
 

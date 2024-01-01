@@ -9,9 +9,9 @@ Created on 31.12.23
 
 import sys
 sys.path.append("../")
-from slippy.slippy import GeoTrans
+from seislip.seislip import GeoTrans
 
-# slippy libs
+# SeiSip libs
 # from ..slippy import GeoTrans
 
 class Fault(GeoTrans):

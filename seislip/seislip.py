@@ -151,7 +151,7 @@ class GeoTrans(object):
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
     def check_folder(self) -> str:
-        """Check and create a folder named "SlipPy" if it does not exist in current working directory.
+        """Check and create a folder named "SeiSlip" if it does not exist in current working directory.
         This folder is used for saving files.
 
         Args:
@@ -163,7 +163,7 @@ class GeoTrans(object):
 
         current_path = os.getcwd()
         # check the folder's existence
-        folder_path = os.path.join(current_path, "SlipPy")
+        folder_path = os.path.join(current_path, "SeiSlip")
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
