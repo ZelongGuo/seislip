@@ -3,6 +3,9 @@
 > Zelong Guo, @ Potsdam, zelong.guo@outlook.com
 
 
+## Requirments:
+- python >= 3.11
+
 Cartesian and Fault Coordinate System:
 
 <center>
