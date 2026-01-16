@@ -426,7 +426,7 @@ class InSAR(GeoTrans):
 
     # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
     def plot(self, key: str, folder_path: str, fig_name: str) -> None:
-        """Plot figure to SlipPy folder in current directory.
+        """Plot figure to seislip folder in current directory.
 
         Args:
             - key:                Key value of data you want plotting, "los", "phase", "azi", "inc", "dsm", "mask"
@@ -437,7 +437,7 @@ class InSAR(GeoTrans):
         Return:
             None.
         """
-        # check and create "SlipPy" folder under working directory
+        # check and create "seislip" folder under working directory
         # folder_name = self.check_folder()
 
         # plotting

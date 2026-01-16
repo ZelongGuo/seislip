@@ -15,7 +15,6 @@ import math
 import numpy as np
 
 __author__ = "Zelong Guo"
-__institution__ = "GFZ Potsdam Germany"
 
 class Node(object):
     """Node class to generate a node (parent node or child node) which start
@@ -30,13 +29,13 @@ class Node(object):
 
     def get_width(self):
         return self.width
-    
+
     def get_height(self):
         return self.height
-    
+
     def get_points(self, image):
         return image[self.x0:self.x0 + self.get_width(), self.y0:self.y0 + self.get_height()]
-    
+
     def get_std(self, image):
         pixels = self.get_points(image)
         # get the standard deviation of non-zero elements of the image
@@ -244,14 +243,15 @@ if __name__ == '__main__':
     Z2 = np.exp(-(X - 1)**2 - (Y - 1)**2)
     Z = (Z1 - Z2) * 20
     img = Z
-    # set up nan
-    img[:, 0:120] = 0
-    img[:, -1] = 0
-    img[0, :] = 0
-    img[-30:-1, :] = 0
+    # # set up nan
+    # img[:, 0:120] = 0
+    # img[:, -1] = 0
+    # img[0, :] = 0
+    # img[-30:-1, :] = 0
 
 
+    print("=-" * 30)
     qtTemp = QTree(X, Y, img)  #contrast threshold, min cell size, img
-    qtTemp.subdivide(16, 64, np.std(img)-2) # recursively generates quad tree
+    qtTemp.subdivide(4, 64, np.std(img)-2) # recursively generates quad tree
     qtTemp.qtresults(0.3)
     qtTemp.show_qtresults("orignal data", 'none')

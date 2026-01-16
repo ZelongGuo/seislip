@@ -300,7 +300,7 @@ if __name__ == "__main__":
     fault = RectPatch({"upper center": (444444, 555555, -4)}, strike=10, dip=30, length=80, width=50)
     y_count, y_coords = fault._get_segments_size_varying(fault.width, 2, ratio=1.5)
     # x_count, x_coords = fault.get_segments(fault.length, 3, ratio=2)
-    pass
+    # pass
 
 
 

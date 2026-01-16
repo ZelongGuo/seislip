@@ -190,6 +190,7 @@ class Fault(GeoTrans):
         Return:
             - fault_corners:      a list of fault mian points coordinates
             - fault_verts:        a list of fault 4 corners coordinates
+            - fault centroid      the centroid position of the fault
         """
         if "UTM" in coords:
             x, y, verdepth = coords["UTM"][0], coords["UTM"][1], coords["UTM"][2]
@@ -379,12 +380,18 @@ if __name__ == "__main__":
 
     fault = Fault("fault1", 44.28, 35.47)
     # patch1, patch_corner1 = fault.initialize_planar_fault(lon_uc=44.344, lat_uc=35.603, verdepth_uc=3, strike=10, dip=45, length=80, width=50)
-    fault.initialize_fault(pointpos="upper center", lon=44.344, lat=35.603, verdepth=-15, strike=50, dip=45, length=180, width=30)
+    fault.initialize_fault(pointpos="upper center", lon=44.344, lat=35.603, verdepth=0, strike=50, dip=45, length=180, width=30)
     # fault.plot(fault.patch_verts)
 
     # fault.extend_to_surface()
-    fault.construct_rect_patches(sublength=3, subwidth=3, str_vary_fct=1., dip_vary_fct=1., verbose=False)
+    fault.construct_rect_patches(sublength=8, subwidth=6, str_vary_fct=2, dip_vary_fct=1., verbose=False)
     fault.plot(fault.patch_verts)
+
+
+    # # --------------------------------------------
+    # fault = Fault("fault2", 44.28, 35.47)
+    # fault.initialize_fault(pointpos="upper center", lon=44.28, lat=35.47, verdepth=-5, strike=280, dip=70, length=10, width=10)
+    # fault.plot(fault.patch_verts)
 
 
 
