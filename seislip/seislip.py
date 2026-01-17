@@ -76,7 +76,12 @@ class GeoTrans(object):
         self.wgs = CRS(ellps)
 
         if utmzone is not None:
-            self.utm = CRS(proj='utm', zone=utmzone, ellps=ellps)
+            # Extract zone number if it contains hemisphere letter (e.g., "37N" -> 37)
+            if isinstance(utmzone, str):
+                zone_num = int(''.join(filter(str.isdigit, utmzone)))
+            else:
+                zone_num = int(utmzone)
+            self.utm = CRS(proj='utm', zone=zone_num, ellps=ellps)
         else:
             assert lon0 is not None, 'Please specify a longitude (lon0)!'
             assert lat0 is not None, 'Please specify a latitude (lat0)!'
