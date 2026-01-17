@@ -53,13 +53,7 @@ class Fault(GeoTrans):
         self.length = None
         self.width = None
         self.patch_verts = None
-
-        # -------------------------------------------------------------------------
-        # read from trace and etc...
-        self.mutifaults = None  # TODO: multifaults is a list contain multiple fault objects,
-        # TODO: if there is multiple faults, then delete the above attributes
-        self.rectpatch = None
-
+        
     # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 
     def initialize_fault(self, pointpos: str, lon, lat, verdepth, strike, dip, length, width):
