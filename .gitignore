@@ -1,5 +1,36 @@
-# my .gitignore file, stop tracking following files:
+# Local editor and OS files
 .idea/
+.vscode/
 .DS_Store
+
+# Local agent/tooling settings
+.claude/
+
+# Python caches
 __pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Python build and packaging artifacts
+build/
+dist/
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Project-generated exploratory outputs
+test_output/
+img/
+*.pos
+*.msh
+
+# Illustrator/source-art working files
 *.ai

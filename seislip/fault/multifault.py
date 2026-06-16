@@ -20,14 +20,14 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 # seislip libs
 if __name__ == "__main__":
-    # sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
     sys.path.append("../")
-
     from seislip.seislip import GeoTrans
     from seislip.fault.fault import Fault
+    from seislip.fault.tripatch import TriPatch
 else:
     from ..seislip import GeoTrans
     from .fault import Fault
+    from .tripatch import TriPatch
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 class MultiFault(GeoTrans):
@@ -275,7 +275,7 @@ class MultiFault(GeoTrans):
     def discretize_triangles(self, element_size, refine_near_trace=True):
         """Discretize curved fault surface into triangular patches using gmsh.
 
-        This creates a continuous mesh without gaps or overlaps.
+        This method now delegates to TriPatch for proper curved surface meshing.
 
         Args:
             - element_size:          Maximum triangle edge length (km)
@@ -285,93 +285,19 @@ class MultiFault(GeoTrans):
             - List of triangular patches (each = [(x1,y1,z1), (x2,y2,z2), (x3,y3,z3)])
         """
         if self.surface_type != "curved" or self.trace_points is None:
-            raise ValueError("discretize_triangles() requires from_trace() to be called first!")
+            raise ValueError("discretize_triangles() requires from_trace_triangles() to be called first!")
 
-        try:
-            import gmsh
-        except ImportError:
-            raise ImportError("gmsh package is required for triangular meshing. "
-                            "Install with: pip install gmsh")
+        # Create TriPatch object (fault parameters are not needed for curved surface meshing)
+        tri_patch = TriPatch(None, None, None, None, None)
+        self.tri_patch_verts = tri_patch.discretize_curved(
+            trace_points=self.trace_points,
+            dips=self.trace_dips,
+            widths=self.trace_widths,
+            element_size=element_size,
+            refine_near_trace=refine_near_trace
+        )
 
-        print(f"Meshing curved fault with gmsh (element_size={element_size} km)...")
-        print("-" * 50)
-
-        # Initialize gmsh
-        gmsh.initialize()
-        gmsh.option.setNumber("General.Terminal", 1)
-        gmsh.model.add("MultiFault", 3)
-
-        # Create spline curve from trace points
-        # For now, create a simplified planar surface based on trace bounds
-        # Full curved surface meshing would require creating CAD geometry
-
-        # Get trace bounds
-        all_x = [p[0] for p in self.trace_points]
-        all_y = [p[1] for p in self.trace_points]
-        all_z = [p[2] for p in self.trace_points]
-
-        # Create a rectangular surface representing trace bounds
-        # This is a simplification - proper curved meshing requires CAD geometry
-        x_min, x_max = min(all_x), max(all_x)
-        y_min, y_max = min(all_y), max(all_y)
-        z_min, z_max = min(all_z), max(all_z)
-
-        # Add points (4 corners of rectangular patch)
-        points = [
-            (x_min, y_min, z_max),  # Upper origin
-            (x_max, y_min, z_max),  # Upper end
-            (x_max, y_min, z_min),  # Bottom end
-            (x_min, y_min, z_min),  # Bottom origin
-        ]
-
-        for i, (x, y, z) in enumerate(points, 1):
-            gmsh.model.geo.addPoint(i, x, y, z)
-
-        # Create curve lines
-        gmsh.model.geo.addSpline([1, 2, 3, 4, 1], 1)
-
-        # Create curve loop
-        gmsh.model.geo.addCurveLoop([1], 1)
-
-        # Create surface from curve loop
-        gmsh.model.geo.addSurfaceFilling([1], 1)
-
-        # Synchronize and mesh
-        gmsh.model.geo.synchronize()
-        gmsh.option.setNumber("Mesh.MeshSizeMax", element_size)
-
-        if refine_near_trace:
-            # Set smaller mesh size near surface (upper edge)
-            # This would require size field implementation
-            pass
-
-        gmsh.model.mesh.generate(2)  # 2D surface mesh
-
-        # Get mesh elements (triangles)
-        mesh_tags = gmsh.model.mesh.getElements()[2]  # Triangles (type 2)
-        mesh_nodes = gmsh.model.mesh.getNodes()
-
-        # Convert to triangle patches
-        tri_patches = []
-        for i, tag in enumerate(mesh_tags):
-            node_indices = tag[1]  # Node indices
-            if len(node_indices) == 3:  # Triangle
-                # Get node coordinates
-                nodes = []
-                for node_idx in node_indices:
-                    nodes.append(mesh_nodes[node_idx - 1])  # gmsh is 1-indexed
-
-                tri_patches.append(nodes)
-
-        self.tri_patch_verts = tri_patches
-
-        print(f"Created {len(tri_patches)} triangular patches.")
-        print("+-" * 50)
-
-        # Cleanup
-        gmsh.finalize()
-
-        return tri_patches
+        return self.tri_patch_verts
 
     # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
     def extend_to_surface_all(self):
@@ -425,16 +351,16 @@ class MultiFault(GeoTrans):
 
         plt.tight_layout()
 
-        # Save
-        import os
-        output_dir = "test_output"
-        os.makedirs(output_dir, exist_ok=True)
-        safe_title = title.replace(" ", "_").replace("/", "_")
-        output_path = os.path.join(output_dir, f"{safe_title}.png")
+        # # Save
+        # import os
+        # output_dir = "test_output"
+        # os.makedirs(output_dir, exist_ok=True)
+        # safe_title = title.replace(" ", "_").replace("/", "_")
+        # output_path = os.path.join(output_dir, f"{safe_title}.png")
         # plt.savefig(output_path, dpi=300, bbox_inches='tight')
         plt.show()
         plt.close()
-        print(f"Plot saved to: {output_path}")
+        # print(f"Plot saved to: {output_path}")
 
     # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
     def plot_trace(self, title="Curved Fault Trace"):

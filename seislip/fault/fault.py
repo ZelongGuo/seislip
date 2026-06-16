@@ -22,9 +22,11 @@ if __name__ == "__main__":
     sys.path.append("../")
     from seislip.seislip import GeoTrans
     from seislip.fault.rectpatch import RectPatch
+    from seislip.fault.tripatch import TriPatch
 else:
     from ..seislip import GeoTrans
     from .rectpatch import RectPatch
+    from .tripatch import TriPatch
 
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
@@ -53,7 +55,7 @@ class Fault(GeoTrans):
         self.length = None
         self.width = None
         self.patch_verts = None
-        
+
     # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 
     def initialize_fault(self, pointpos: str, lon, lat, verdepth, strike, dip, length, width):
@@ -164,7 +166,32 @@ class Fault(GeoTrans):
             self.patch_verts, self.width = rectangle_patches.discretize_depth_varying(sublength, subwidth, str_vary_fct,
                                                                           dip_vary_fct, verbose)
 
+    # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+    def construct_tri_patches(self, max_edge_length, refinement=None):
+        """Discretize fault into triangular patches using Delaunay triangulation.
 
+        Uses TriPatch for planar fault triangulation. Triangles are created on the
+        fault plane and returned as lists of 3 vertices in UTM coordinates.
+
+        Args:
+            - max_edge_length: Maximum triangle edge length (km)
+            - refinement: Optional refinement function for variable edge sizes.
+                         Function signature: (x, y, z) -> float, where
+                         x, y, z are fault coordinates and return is
+                         local edge length multiplier (default 1.0).
+
+        Return:
+            - Number of triangular patches created
+
+        Note:
+            This method stores triangles in self.tri_patch_verts, where each triangle
+            is a list of 3 vertices: [(x1,y1,z1), (x2,y2,z2), (x3,y3,z3)].
+            All coordinates are in UTM (km).
+        """
+        # Create TriPatch object
+        tri_patches = TriPatch(self.ucp, self.strike, self.dip, self.length, self.width)
+        self.tri_patch_verts = tri_patches.discretize_planar(max_edge_length, refinement)
+        return len(self.tri_patch_verts)
 
     # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
     def __get_corner_vertices(self, pointpos: str, coords: dict, strike, dip, length, width):
@@ -321,8 +348,8 @@ class Fault(GeoTrans):
 
 
     # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-    # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+    # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
     def read_from_trace(self):
         pass
@@ -369,7 +396,7 @@ class Fault(GeoTrans):
         plt.show()
 
 
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 if __name__ == "__main__":
 
     fault = Fault("fault1", 44.28, 35.47)
@@ -386,7 +413,4 @@ if __name__ == "__main__":
     # fault = Fault("fault2", 44.28, 35.47)
     # fault.initialize_fault(pointpos="upper center", lon=44.28, lat=35.47, verdepth=-5, strike=280, dip=70, length=10, width=10)
     # fault.plot(fault.patch_verts)
-
-
-
 
