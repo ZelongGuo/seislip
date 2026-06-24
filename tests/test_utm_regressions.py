@@ -10,11 +10,11 @@ from seislip.seislip import GeoTrans
     reason="automatic UTM selection chooses the first intersecting zone instead of the containing zone",
 )
 def test_automatic_utm_zone_contains_reference_point() -> None:
-    transformer = GeoTrans("automatic-zone", lon0=44.0, lat0=35.0)
-    expected_crs = CRS.from_epsg(32638)
+    transformer = GeoTrans("automatic-zone", lon0=1.5, lat0=50.0)
+    expected_crs = CRS.from_epsg(32631)
 
     assert transformer.utm == expected_crs
-    assert transformer.utmzone == "38N"
+    assert transformer.utmzone == "31N"
 
 
 @pytest.mark.xfail(
@@ -40,6 +40,6 @@ def test_explicit_southern_utm_zone_preserves_hemisphere() -> None:
     assert_allclose(
         [x_km, y_km],
         [expected_x_m / 1000.0, expected_y_m / 1000.0],
-        atol=1e-9,
+        rtol=0.0,
+        atol=1e-6,
     )
-
