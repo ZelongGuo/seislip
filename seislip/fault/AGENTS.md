@@ -43,10 +43,13 @@ Long names and uppercase variants are supported in existing code. Preserve compa
 - Triangular patches are stored as lists of three UTM vertices.
 - `Fault.patch_verts` is used for the original fault plane and then overwritten by rectangular patches after `construct_rect_patches()`.
 - `Fault.tri_patch_verts` is populated by `construct_tri_patches()`.
+- `Fault.initialize_fault()` accepts a geographic reference point; the UTM path used by `MultiFault` currently round-trips through lon/lat.
 
 ## Maintenance Notes
 
 - Keep `RectPatch` and `TriPatch` transformation setup aligned unless intentionally diverging.
-- `MultiFault.discretize_triangles()` currently calls `TriPatch.discretize_curved()`, but `tripatch.py` currently implements only `discretize_planar()`. Treat curved triangular meshing as incomplete until implemented and tested.
+- `TriPatch.discretize_planar()` builds a structured fault-plane grid and splits cells into triangles; do not rely on the stale Delaunay wording in its caller's docstring.
+- `MultiFault.discretize_triangles()` currently calls nonexistent `TriPatch.discretize_curved()`. Treat curved triangular meshing as nonfunctional until implemented and tested end to end.
 - Surface breach logic adjusts upper-edge depth and width; test geometry before changing `extend_to_surface()` or `__check_breach_surface()`.
 - Avoid changing vertex ordering without checking plotting, meshing, and downstream inversion assumptions.
+- Geometry tests should assert coordinate round trips, corner locations, patch counts, vertex shapes/order, shared segment edges, and surface-depth bounds with numerical tolerances.

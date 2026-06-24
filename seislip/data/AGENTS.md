@@ -6,8 +6,8 @@ Local guidance for agents working in `seislip/data/`.
 
 This directory handles InSAR data ingestion, preprocessing, visualization, masking, and quadtree downsampling.
 
-- `insar.py` is the main class-based API.
-- `plot_data.py`, `utility.py`, `deramp_dem.py`, and `downsample.py` contain older function-style or prototype utilities.
+- `insar.py` is the active class-based API.
+- `plot_data.py`, `utility.py`, `deramp_dem.py`, and `downsample.py` are legacy/prototype modules, not equivalent public APIs. Some have broken imports, undefined calls, or incomplete classes; do not expose or reuse them without repairing and testing the complete path.
 
 ## Data Model
 
@@ -34,6 +34,7 @@ self.data = {
 
 - `read_from_gamma()` reads GAMMA big-endian float binaries and converts zero phase to `np.nan`.
 - `read_from_grd()` accepts NetCDF grids with either `lon`/`lat` or `x`/`y` dimensions.
+- NetCDF variables may carry their own units. Preserve those metadata values instead of silently assuming kilometers or meters for generic `x`/`y` grids.
 - Satellite phase-to-LOS constants live in `InSAR._phase2los()`; keep sign convention and units stable unless explicitly changing scientific convention.
 - `read_from_xyz()` and `deramp()` are currently placeholders.
 
@@ -43,3 +44,5 @@ self.data = {
 - Avoid adding import-time plotting or file I/O.
 - Plotting methods may save figures; keep save paths explicit and avoid hard-coded research paths in reusable functions.
 - If changing downsampling or masking logic, test array shape, coordinate orientation, and NaN handling together.
+- Test readers with tiny synthetic files and assert coordinate grids, data shape, orientation, units, and missing-data behavior together.
+- Prefer exceptions with actionable context in new library code; do not copy legacy patterns that print an error and continue with partially initialized state.

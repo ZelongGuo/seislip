@@ -3,6 +3,11 @@
 .vscode/
 .DS_Store
 
+# md files
+*.md
+!README.md
+!Todo.md
+
 # Local agent/tooling settings
 .claude/
 
