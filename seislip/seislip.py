@@ -10,7 +10,7 @@ __author__ = "Zelong Guo"
 __version__ = "1.0.0"
 
 import os
-from typing import Optional, Union, Tuple
+from typing import Optional, Tuple, Union
 import numpy as np
 from pyproj import CRS, Geod, Transformer
 from pyproj.aoi import AreaOfInterest
@@ -21,15 +21,20 @@ class GeoTrans(object):
     """A parent class to perform coordinates transformation between geographic (lon and lat) and projection
     (UTM) coordinates.
 
-    Either geographic coordinates or UTM zone should be specified. However, we do not recommend specifying
-    utm zone number since it would give negative easting values if the zone number is not appropriate.
+    Either geographic coordinates or an explicit UTM zone should be specified.
+    Geographic coordinates are recommended for most workflows because pyproj
+    can select the UTM CRS containing the reference point.  If ``utmzone`` is
+    specified manually, it must include an explicit hemisphere suffix, e.g.
+    ``"38N"`` or ``"36S"``.  Bare zones such as ``38`` or ``"38"`` are
+    rejected because the hemisphere is ambiguous.  The ``N``/``S`` suffix here
+    means northern/southern hemisphere, not an MGRS latitude band.
 
     Args:
         - name:     instance name of this parent class,
         - lon0:     longitude defining the center of the custom UTM zone,
         - lat0:     latitude defining the center of the custom UTM zone,
         - ellps:    (optional, default is "WGS 84") reference ellipsoid of the data
-        - utmzone:  (optional, default is None) the number of the UTM zone.
+        - utmzone:  (optional, default is None) explicit UTM zone with hemisphere, e.g. "38N".
 
     Return:
         - None.
@@ -50,19 +55,89 @@ class GeoTrans(object):
 
     # initialize UTM zone, this private method is called by __init__.
     # the initialization of following CRS referred to csi of Romain.
+    @staticmethod
+    def _parse_utmzone(utmzone: str) -> Tuple[int, bool]:
+        """Parse a strict explicit UTM zone.
+
+        Manual UTM input must be a string made of a zone number and a
+        hemisphere suffix, for example ``"38N"`` or ``"36S"``.  The suffix is
+        required so that the code never guesses northern vs. southern
+        hemisphere from unrelated inputs.  ``N`` and ``S`` mean hemisphere
+        only; MGRS latitude-band letters are intentionally not supported.
+        """
+        if not isinstance(utmzone, str):
+            raise TypeError(
+                "UTM zone must be a string with an explicit hemisphere suffix, "
+                f"for example '38N' or '36S'; got {utmzone!r}."
+            )
+
+        zone_text = utmzone.strip().upper()
+        if len(zone_text) < 2:
+            raise ValueError(
+                "UTM zone must include a zone number and hemisphere suffix, "
+                f"for example '38N' or '36S'; got {utmzone!r}."
+            )
+
+        zone_digits = zone_text[:-1]
+        hemisphere = zone_text[-1]
+        if not zone_digits.isdigit():
+            raise ValueError(f"UTM zone must start with a zone number, got {utmzone!r}.")
+        if hemisphere not in {"N", "S"}:
+            raise ValueError(
+                "UTM zone must end with hemisphere suffix 'N' or 'S', "
+                f"got {utmzone!r}."
+            )
+
+        zone_num = int(zone_digits)
+        if not 1 <= zone_num <= 60:
+            raise ValueError(f"UTM zone number must be between 1 and 60, got {zone_num}.")
+
+        # Convert the hemisphere suffix to a bool flag for southern hemisphere.
+        south = hemisphere == "S"
+        return zone_num, south
+
+    # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+
+    @staticmethod
+    def _make_utm_crs(zone_num: int, south: bool, ellps: str, geographic_crs: CRS) -> CRS:
+        """Create a UTM CRS for the parsed zone and hemisphere, in order to create a ll2xy and xy2ll
+        convertor."""
+
+        # For WGS84, the EPSG code is 4326
+        if geographic_crs.to_epsg() == 4326:
+            # EPSG:326xx represents WGS84 UTM zones in the northern hemisphere,
+            # while EPSG:327xx represents WGS84 UTM zones in the southern hemisphere.
+            epsg = (32700 if south else 32600) + zone_num
+            return CRS.from_epsg(epsg)
+
+        # For non-WGS84 geographic coordinates, build the UTM CRS manually
+        # using PROJ parameters instead of predefined EPSG codes.
+        proj_params = {
+                "proj": "utm",
+                "zone": zone_num,
+                "ellps": ellps.replace(" ", "")
+                }
+        # Add the south flag only for southern-hemisphere UTM zone
+        if south:
+            proj_params["south"] = True
+        return CRS.from_dict(proj_params)
+
+    # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+
     def __set_zone(self, lon0: Optional[float] = None, lat0: Optional[float] = None, ellps: str = "WGS 84",
                    utmzone: Optional[str] = None) -> None:
 
         """Sets the UTM zone in the class.
 
-        You can specify the utm zone NO. directly or give the geographic coordinates of
-        longitude (lon0) and latitude (lat0).
+        You can either give geographic coordinates (``lon0`` and ``lat0``) and
+        let pyproj select the containing UTM zone, or specify an explicit UTM
+        zone with hemisphere suffix (for example ``"38N"`` or ``"36S"``).
 
         Kwargs:
-            - ellps:    Reference Ellipsoid of the data, default is "WGS 84"
+            - ellps:    Reference Ellipsoid of the data, default is "WGS84"
 
             :Method 1:
-                - utmzone:      International UTM zone number
+                - utmzone:      Explicit UTM zone with hemisphere, e.g. "38N" or "36S"
 
             :Method 2:
                 - lon0:         Longitude of the center of the custom UTM zone (deg)
@@ -73,27 +148,24 @@ class GeoTrans(object):
         """
 
         # if the geodetic datum is WGS84, it equals to self.wgs = pp.CRS.from_epsg(4326)
-        self.wgs = CRS(ellps)
+        self.wgs = CRS.from_user_input(ellps)
 
         if utmzone is not None:
-            # Extract zone number if it contains hemisphere letter (e.g., "37N" -> 37)
-            if isinstance(utmzone, str):
-                zone_num = int(''.join(filter(str.isdigit, utmzone)))
-            else:
-                zone_num = int(utmzone)
-            self.utm = CRS(proj='utm', zone=zone_num, ellps=ellps)
+            zone_num, south = self._parse_utmzone(utmzone)
+            self.utm = self._make_utm_crs(zone_num, south, ellps, self.wgs)
         else:
             assert lon0 is not None, 'Please specify a longitude (lon0)!'
             assert lat0 is not None, 'Please specify a latitude (lat0)!'
-            # Find the best zone. Note, every coordinate system has a unique reference code, the so-called EPSG code,
-            # for WGS84, its EPSG code is 4326.
+            # Find the zone containing the reference point.  Use a point-sized
+            # area of interest to avoid selecting a neighbouring zone when a
+            # wider AOI crosses a UTM boundary.
             utm_crs_list = query_utm_crs_info(
                 datum_name="WGS 84",  # the name of the datum in the CRS name (‘NAD27’, ‘NAD83’, ‘WGS 84’, …)
                 area_of_interest=AreaOfInterest(
-                    west_lon_degree=lon0 - 2.,
-                    south_lat_degree=lat0 - 2.,
-                    east_lon_degree=lon0 + 2,
-                    north_lat_degree=lat0 + 2
+                    west_lon_degree=lon0,
+                    south_lat_degree=lat0,
+                    east_lon_degree=lon0,
+                    north_lat_degree=lat0
                 ),
             )
             self.utm = CRS.from_epsg(utm_crs_list[0].code)
@@ -103,8 +175,7 @@ class GeoTrans(object):
         self.proj2utm = Transformer.from_crs(self.wgs, self.utm, always_xy=True)
         self.proj2wgs = Transformer.from_crs(self.utm, self.wgs, always_xy=True)
 
-        if utmzone is None:
-            self.utmzone = self.utm.utm_zone
+        self.utmzone = self.utm.utm_zone
 
         # Set Geod
         # self.geod = Geod(ellps=ellps)
@@ -176,26 +247,19 @@ class GeoTrans(object):
 
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+
 if __name__ == "__main__":
     test = GeoTrans('TEST', -93, 43)
-    # test.check_folder()
 
     lonlat = np.array([[-90.2897635, 40.1467463],
                        [-91.4456356, 43.5353664],
                        [-94.7463463, 44.8363636],
                        [-94.9236646, 42.9463463]])
 
-    x, y = test.ll2xy(lonlat[:, 0].reshape(-1,1), lonlat[:, 1])
-    x, y = test.ll2xy(lonlat[0, 0], lonlat[0, 1])
-
-    a = np.array([-90.1, -91.2, -92, -93])
-    b = np.array([40.3, 41.2, 43, 42])
-    x, y = test.ll2xy(a, b)
-
+    x, y = test.ll2xy(lonlat[:, 0], lonlat[:, 1])
+    x_scalar, y_scalar = test.ll2xy(lonlat[0, 0], lonlat[0, 1])
     z = np.hstack([x.reshape(-1, 1), y.reshape(-1, 1)])
-
     m, n = test.xy2ll(z[:, 0], z[:, 1])
     k = np.hstack([m.reshape(-1, 1), n.reshape(-1, 1)])
-
 
 

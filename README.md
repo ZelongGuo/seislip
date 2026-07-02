@@ -6,6 +6,15 @@
 ## Requirments:
 - python >= 3.11
 
+## Coordinate Reference Systems
+
+`GeoTrans` can initialize its UTM projection in two ways:
+
+- Recommended: provide `lon0` and `lat0`; pyproj selects the UTM CRS containing that reference point.
+- Manual: provide `utmzone` as an explicit hemisphere string such as `"38N"` or `"36S"`. Bare zones like `38` or `"38"` are rejected because the hemisphere is ambiguous. In this project, the `N`/`S` suffix means northern/southern hemisphere, not an MGRS latitude band.
+
+Projected `x`/`y` values returned by `ll2xy()` are in kilometers.
+
 Cartesian and Fault Coordinate System:
 
 <center>
