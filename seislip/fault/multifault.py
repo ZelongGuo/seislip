@@ -56,15 +56,7 @@ class MultiFault(GeoTrans):
             self.transformer = self
         else:
             self.name = name
-            self.transformer = transformer
-            self.lon0 = transformer.lon0
-            self.lat0 = transformer.lat0
-            self.ellps = transformer.ellps
-            self.wgs = transformer.wgs
-            self.utm = transformer.utm
-            self.proj2utm = transformer.proj2utm
-            self.proj2wgs = transformer.proj2wgs
-            self.utmzone = transformer.utmzone
+            self._bind_transformer_state(transformer)
 
         # fault segments (list of Fault objects)
         self.segments = []
@@ -123,7 +115,7 @@ class MultiFault(GeoTrans):
         for point in trace_points:
             if coord_type.upper() == "LL":
                 lon, lat, depth = point
-                x, y = self.ll2xy(lon, lat)
+                x, y = self.transformer.ll2xy(lon, lat)
                 trace_utm.append((x, y, depth))
             else:
                 trace_utm.append(point)
@@ -219,13 +211,13 @@ class MultiFault(GeoTrans):
             if coord_type.upper() == "LL":
                 uo_lon, uo_lat, uo_depth = uo
                 ue_lon, ue_lat, ue_depth = ue
-                uo_x, uo_y = self.ll2xy(uo_lon, uo_lat)
-                ue_x, ue_y = self.ll2xy(ue_lon, ue_lat)
+                uo_x, uo_y = self.transformer.ll2xy(uo_lon, uo_lat)
+                ue_x, ue_y = self.transformer.ll2xy(ue_lon, ue_lat)
             else:
                 uo_x, uo_y, uo_depth = uo
                 ue_x, ue_y, ue_depth = ue
                 # For UTM, we need lon/lat for initialize_fault, so convert back
-                uo_lon, uo_lat = self.xy2ll(uo_x, uo_y)
+                uo_lon, uo_lat = self.transformer.xy2ll(uo_x, uo_y)
 
             # Calculate strike (angle from uo to ue, measured from north clockwise)
             delta_x = ue_x - uo_x

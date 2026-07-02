@@ -58,6 +58,25 @@ class GeoTrans(object):
 
     # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 
+    def _bind_transformer_state(self, transformer: "GeoTrans") -> None:
+        """Bind this object to an existing coordinate transformer.
+
+        Domain objects still inherit from ``GeoTrans`` for compatibility, but
+        composed construction should share the CRS state from one transformer
+        instead of repeating attribute-copy logic in every subclass.
+        """
+        self.transformer = transformer
+        self.lon0 = transformer.lon0
+        self.lat0 = transformer.lat0
+        self.ellps = transformer.ellps
+        self.wgs = transformer.wgs
+        self.utm = transformer.utm
+        self.proj2utm = transformer.proj2utm
+        self.proj2wgs = transformer.proj2wgs
+        self.utmzone = transformer.utmzone
+
+    # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+
     # initialize UTM zone, this private method is called by __init__.
     # the initialization of following CRS referred to csi of Romain.
     @staticmethod

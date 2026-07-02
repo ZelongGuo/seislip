@@ -58,15 +58,7 @@ class InSAR(GeoTrans):
             self.transformer = self
         else:
             self.name = name
-            self.transformer = transformer
-            self.lon0 = transformer.lon0
-            self.lat0 = transformer.lat0
-            self.ellps = transformer.ellps
-            self.wgs = transformer.wgs
-            self.utm = transformer.utm
-            self.proj2utm = transformer.proj2utm
-            self.proj2wgs = transformer.proj2wgs
-            self.utmzone = transformer.utmzone
+            self._bind_transformer_state(transformer)
 
         print("+-" * 50)
         print(f"Now we initialize the InSAR instance {self.name}...")
@@ -184,7 +176,7 @@ class InSAR(GeoTrans):
             Lons, Lats = np.meshgrid(lons, lats)
             Lons, Lats = Lons[::downsample, ::downsample], Lats[::downsample, ::downsample]
             # utm
-            utm_x, utm_y = self.ll2xy(Lons, Lats)
+            utm_x, utm_y = self.transformer.ll2xy(Lons, Lats)
 
             post_arc_after_downsample = post_arc * downsample
             post_utm_after_downsample = post_utm * downsample
@@ -265,7 +257,7 @@ class InSAR(GeoTrans):
                 if lat[0] < lat[-1]:
                     lat = np.flip(lat)
                 Lons, Lats = np.meshgrid(lon, lat)   # the unit should be degrees
-                utm_x, utm_y = self.ll2xy(Lons, Lats)  # the unit should be km
+                utm_x, utm_y = self.transformer.ll2xy(Lons, Lats)  # the unit should be km
                 self.data.update({
                     "lon":          {"value": Lons, "unit": "degree"},
                     "lat":          {"value": Lats, "unit": "degree"},

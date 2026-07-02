@@ -52,15 +52,7 @@ class Fault(GeoTrans):
             self.transformer = self
         else:
             self.name = name
-            self.transformer = transformer
-            self.lon0 = transformer.lon0
-            self.lat0 = transformer.lat0
-            self.ellps = transformer.ellps
-            self.wgs = transformer.wgs
-            self.utm = transformer.utm
-            self.proj2utm = transformer.proj2utm
-            self.proj2wgs = transformer.proj2wgs
-            self.utmzone = transformer.utmzone
+            self._bind_transformer_state(transformer)
 
         # fault parameters
         self.ucp = None   # UTM coordinates of central point on upper fault edge
@@ -233,10 +225,10 @@ class Fault(GeoTrans):
             x, y, verdepth = coords["utm"][0], coords["utm"][1], coords["utm"][2]
         elif "LL" in coords:
             lon, lat, verdepth = coords["LL"][0], coords["LL"][1], coords["LL"][2]
-            x, y = self.ll2xy(lon, lat)
+            x, y = self.transformer.ll2xy(lon, lat)
         elif "ll" in coords:
             lon, lat, verdepth = coords["ll"][0], coords["ll"][1], coords["ll"][2]
-            x, y = self.ll2xy(lon, lat)
+            x, y = self.transformer.ll2xy(lon, lat)
         else:
             raise ValueError("Invalid coordinate format!")
 
