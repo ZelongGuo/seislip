@@ -160,3 +160,27 @@ def test_explicit_utm_zone_requires_number_and_hemisphere(utmzone) -> None:
     """
     with pytest.raises((TypeError, ValueError)):
         GeoTrans("ambiguous-zone", utmzone=utmzone)
+
+
+# ===================================================================
+# Automatic UTM initialization requires both lon0 and lat0
+# ===================================================================
+
+@pytest.mark.parametrize(
+    ("kwargs"),
+    [
+        {},
+        {"lon0": 44.0},
+        {"lat0": 35.0},
+    ],
+)
+def test_automatic_utm_zone_requires_lon0_and_lat0(kwargs) -> None:
+    """Automatic UTM selection needs both reference coordinates.
+
+    Without an explicit ``utmzone``, ``GeoTrans`` must know the reference
+    longitude and latitude so pyproj can select the UTM CRS containing that
+    point.  Missing either coordinate is a caller error and should raise a
+    clear ``ValueError`` rather than relying on Python ``assert`` statements.
+    """
+    with pytest.raises(ValueError, match="either an explicit utmzone"):
+        GeoTrans("missing-reference", **kwargs)

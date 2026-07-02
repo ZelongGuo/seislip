@@ -12,17 +12,19 @@ Created on Tue Nov. 21 2023
 __author__ = "Zelong Guo"
 __version__ = "1.0.0"
 
-import os
 from typing import Optional, Tuple, Union
 import numpy as np
-from pyproj import CRS, Geod, Transformer
+from pyproj import CRS, Transformer
 from pyproj.aoi import AreaOfInterest
 from pyproj.database import query_utm_crs_info
 
 
 class GeoTrans(object):
-    """A parent class to perform coordinates transformation between geographic (lon and lat) and projection
-    (UTM) coordinates.
+    """Coordinate transformer between geographic lon/lat and projected UTM coordinates.
+
+    ``GeoTrans`` centralizes CRS selection and pyproj transformer setup for
+    SeiSlip objects.  It is currently used as a base class by data and fault
+    classes, but its core responsibility is coordinate transformation.
 
     Either geographic coordinates or an explicit UTM zone should be specified.
     Geographic coordinates are recommended for most workflows because pyproj
@@ -150,15 +152,17 @@ class GeoTrans(object):
             None.
         """
 
-        # if the geodetic datum is WGS84, it equals to self.wgs = pp.CRS.from_epsg(4326)
         self.wgs = CRS.from_user_input(ellps)
 
         if utmzone is not None:
             zone_num, south = self._parse_utmzone(utmzone)
             self.utm = self._make_utm_crs(zone_num, south, ellps, self.wgs)
         else:
-            assert lon0 is not None, 'Please specify a longitude (lon0)!'
-            assert lat0 is not None, 'Please specify a latitude (lat0)!'
+            if lon0 is None or lat0 is None:
+                raise ValueError(
+                    "GeoTrans requires either an explicit utmzone such as '38N' "
+                    "or both lon0 and lat0 for automatic UTM zone selection."
+                )
             # Find the zone containing the reference point.  Use a point-sized
             # area of interest to avoid selecting a neighbouring zone when a
             # wider AOI crosses a UTM boundary.
@@ -179,9 +183,6 @@ class GeoTrans(object):
         self.proj2wgs = Transformer.from_crs(self.utm, self.wgs, always_xy=True)
 
         self.utmzone = self.utm.utm_zone
-
-        # Set Geod
-        # self.geod = Geod(ellps=ellps)
 
         # Set utmzone
         # self.utmzone = utmzone
@@ -227,27 +228,6 @@ class GeoTrans(object):
         lon, lat = self.proj2wgs.transform(x*1000, y*1000)
 
         return lon, lat
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-#     def check_folder(self) -> str:
-#         """Check and create a figure folder if it does not exist in current working directory.
-#         This folder is used for saving files.
-#
-#         Args:
-#             None.
-#
-#         Return:
-#             folder_path:        Absolute folder path.
-#         """
-#
-#         current_path = os.getcwd()
-#         # check the folder's existence
-#         folder_path = os.path.join(current_path, "SlipPy")
-#         if not os.path.exists(folder_path):
-#             os.makedirs(folder_path)
-#
-#         return folder_path
-
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 
