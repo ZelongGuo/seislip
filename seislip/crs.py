@@ -21,8 +21,8 @@ class CoordinateTransformer(object):
     """Coordinate transformer between geographic lon/lat and projected UTM coordinates.
 
     ``CoordinateTransformer`` centralizes CRS selection and pyproj transformer setup for
-    SeiSlip objects.  It is currently used as a base class by data and fault
-    classes, but its core responsibility is coordinate transformation.
+    SeiSlip objects.  Domain objects hold it through composition; its core
+    responsibility is coordinate transformation.
 
     Either geographic coordinates or an explicit UTM zone should be specified.
     Geographic coordinates are recommended for most workflows because pyproj
@@ -53,25 +53,6 @@ class CoordinateTransformer(object):
         self.ellps = ellps
 
         self.__set_zone(lon0=lon0, lat0=lat0, ellps=ellps, utmzone=utmzone)
-
-    # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-
-    def _bind_transformer_state(self, transformer: "CoordinateTransformer") -> None:
-        """Bind this object to an existing coordinate transformer.
-
-        Domain objects still inherit from ``CoordinateTransformer`` for compatibility, but
-        composed construction should share the CRS state from one transformer
-        instead of repeating attribute-copy logic in every subclass.
-        """
-        self.transformer = transformer
-        self.lon0 = transformer.lon0
-        self.lat0 = transformer.lat0
-        self.ellps = transformer.ellps
-        self.wgs = transformer.wgs
-        self.utm = transformer.utm
-        self.proj2utm = transformer.proj2utm
-        self.proj2wgs = transformer.proj2wgs
-        self.utmzone = transformer.utmzone
 
     # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 
@@ -247,6 +228,40 @@ class CoordinateTransformer(object):
         return lon, lat
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+def init_coordinate_transformer_owner(owner, name: str, transformer: CoordinateTransformer) -> None:
+    """Initialize a domain object with an existing coordinate transformer.
+
+    ``Fault``, ``InSAR`` and ``MultiFault`` are not coordinate transformers
+    themselves. They must receive a project-level ``CoordinateTransformer``
+    and store it as ``self.transformer``. This keeps CRS setup in exactly one
+    place, so all domain objects share the same UTM zone and pyproj settings.
+    """
+    if transformer is None:
+        raise ValueError(
+            "A CoordinateTransformer must be provided with transformer=. "
+            "Create it once, then pass it to Fault, InSAR, or MultiFault."
+        )
+    if not isinstance(transformer, CoordinateTransformer):
+        raise TypeError(
+            "transformer must be a CoordinateTransformer instance, "
+            f"got {type(transformer).__name__}."
+        )
+
+    owner.name = name
+    owner.transformer = transformer
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+def transformer_property(attribute_name: str):
+    """Create a read-only property that forwards to ``self.transformer``.
+
+    Example: ``utmzone = transformer_property("utmzone")`` means that
+    ``fault.utmzone`` returns ``fault.transformer.utmzone``. This keeps the
+    convenient old attribute access without copying CRS state into every
+    domain object.
+    """
+    return property(lambda self: getattr(self.transformer, attribute_name))
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 
 if __name__ == "__main__":
     test = CoordinateTransformer('TEST', -93, 43)

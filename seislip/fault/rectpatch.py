@@ -22,11 +22,9 @@ if __name__ == "__main__":
     sys.path.append("../")
     # from seislip.fault.fault import Fault
     from seislip.utils.transformation import Transformation
-    from seislip.crs import CoordinateTransformer
 else:
     # from .fault import Fault
     from ..utils.transformation import Transformation
-    from ..crs import CoordinateTransformer
 
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
@@ -173,8 +171,8 @@ class RectPatch(object):
 #     """Planar/rectangle fault grid generation with rectangle patches.
 #
 #     """
-#     def __init__(self, name, lon0, lat0, ellps="WGS84", utmzone=None):
-#         super().__init__(name, lon0, lat0, ellps, utmzone)
+#     def __init__(self, name, transformer):
+#         super().__init__(name, transformer=transformer)
 #
 #         # fault parameters
 #         self.origin = None   # the origin point you specified

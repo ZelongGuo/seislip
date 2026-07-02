@@ -27,38 +27,48 @@ import warnings
 # SlipPy libs
 if __name__ == "__main__":
     sys.path.append("../")
-    from seislip.crs import CoordinateTransformer
+    from seislip.crs import CoordinateTransformer, init_coordinate_transformer_owner, transformer_property
     from seislip.utils.quadtree import QTree
 else:
-    from ..crs import CoordinateTransformer
+    from ..crs import CoordinateTransformer, init_coordinate_transformer_owner, transformer_property
     from ..utils.quadtree import QTree
 
 
 # Insar Class
-class InSAR(CoordinateTransformer):
+class InSAR:
     """Insar class for handling InSAR data.
 
     Args:
         - name:     instance name
-        - lon0:     longitude of the UTM zone
-        - lat0:     latitude of the UTM zone
-        - ellps:    ellipsoid, default = "WGS84"
-        - transformer: optional CoordinateTransformer instance to share an existing CRS transformer
+        - transformer: CoordinateTransformer instance defining the shared CRS
 
     Return:
         None.
 
     """
 
-    def __init__(self, name: str, lon0: Optional[float] = None, lat0: Optional[float] = None, ellps: str = "WGS84",
-                 utmzone: Optional[str] = None, transformer: Optional[CoordinateTransformer] = None) -> None:
-        # call init function of the parent class to initialize
-        if transformer is None:
-            super().__init__(name, lon0, lat0, ellps, utmzone)
-            self.transformer = self
-        else:
-            self.name = name
-            self._bind_transformer_state(transformer)
+    # CRS attributes are stored on ``self.transformer``. These properties let
+    # existing code keep using ``obj.utmzone`` / ``obj.lon0`` directly while
+    # avoiding duplicated CRS state on the domain object.
+    lon0 = transformer_property("lon0")
+    lat0 = transformer_property("lat0")
+    ellps = transformer_property("ellps")
+    wgs = transformer_property("wgs")
+    utm = transformer_property("utm")
+    proj2utm = transformer_property("proj2utm")
+    proj2wgs = transformer_property("proj2wgs")
+    utmzone = transformer_property("utmzone")
+
+    def ll2xy(self, lon, lat):
+        """Forward lon/lat conversion to the owned coordinate transformer."""
+        return self.transformer.ll2xy(lon, lat)
+
+    def xy2ll(self, x, y):
+        """Forward UTM-to-lon/lat conversion to the owned coordinate transformer."""
+        return self.transformer.xy2ll(x, y)
+
+    def __init__(self, name: str, transformer: CoordinateTransformer = None) -> None:
+        init_coordinate_transformer_owner(self, name, transformer)
 
         print("+-" * 50)
         print(f"Now we initialize the InSAR instance {self.name}...")
@@ -554,7 +564,8 @@ class InSAR(CoordinateTransformer):
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 if __name__ == "__main__":
 
-    t079 = InSAR("T079D_wang", 44.28, 35.47, "WGS84")
+    transformer = CoordinateTransformer("t079_crs", lon0=44.28, lat0=35.47)
+    t079 = InSAR("T079D_wang", transformer=transformer)
     t079_wang = "/misc/zs7/Zelong/2017_Iraq-Iran_EQ/Postseismic_InSAR_WangKang/dLOS_Sentinel-1/DES79/dlos_20181125.grd"
     t079.read_from_grd(los=t079_wang)
 
@@ -578,7 +589,7 @@ if __name__ == "__main__":
 #
 #     # t072.read_from_gamma(dem_par, t072_file, azi, inc, satellite="Sentinel-1", downsample=10)
 #
-#     t072_gamma = InSAR("T072A_gamma", 44.28, 35.47, "WGS84")
+#     t072_gamma = InSAR("T072A_gamma", transformer=transformer)
 #     t072_gamma.read_from_gamma(dem_par, t072_file, azi, inc, satellite="Sentinel-1", downsample=10)
 #     t072_gamma.dsm_quadtree(16, 256, 0.015, 0.3, "los", "utm")
 #     t072_gamma.plot("dsm", fig_path, "t072_gamma_dsm")

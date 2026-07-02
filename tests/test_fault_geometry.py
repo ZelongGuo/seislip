@@ -134,7 +134,8 @@ def make_oblique_fault(
     Fault
         Fully initialised fault with ``patch_verts`` populated.
     """
-    fault = Fault("oblique-fault", lon0=FAULT_LON, lat0=FAULT_LAT)
+    transformer = CoordinateTransformer("fault-transformer", lon0=FAULT_LON, lat0=FAULT_LAT)
+    fault = Fault("oblique-fault", transformer=transformer)
     fault.initialize_fault(
         pointpos=point_position,
         lon=lon,
@@ -217,18 +218,10 @@ def assert_vertices_lie_on_plane(
 # ===================================================================
 
 def test_fault_accepts_shared_coordinate_transformer() -> None:
-    """A composed CRS transformer must reproduce legacy fault geometry.
-
-    This locks the first migration step from inheritance-only CRS handling to
-    composition.  The old ``Fault(name, lon0, lat0)`` constructor remains valid,
-    while the new ``Fault(name, transformer=...)`` path should use the same CRS
-    and produce identical fault vertices for the same physical geometry.
-    """
-    legacy_fault = make_oblique_fault()
-
+    """Fault should use the CRS from an explicit shared transformer."""
     transformer = CoordinateTransformer("shared-transformer", lon0=FAULT_LON, lat0=FAULT_LAT)
-    composed_fault = Fault("composed-fault", transformer=transformer)
-    composed_fault.initialize_fault(
+    fault = Fault("composed-fault", transformer=transformer)
+    fault.initialize_fault(
         pointpos="uc",
         lon=FAULT_LON,
         lat=FAULT_LAT,
@@ -239,18 +232,19 @@ def test_fault_accepts_shared_coordinate_transformer() -> None:
         width=FAULT_WIDTH_KM,
     )
 
-    assert composed_fault.transformer is transformer
-    assert composed_fault.utm == legacy_fault.utm
-    assert composed_fault.utmzone == legacy_fault.utmzone
+    reference_fault = make_oblique_fault()
+    assert fault.transformer is transformer
+    assert fault.utm == transformer.utm
+    assert fault.utmzone == transformer.utmzone
     assert_allclose(
-        surface_vertices(composed_fault),
-        surface_vertices(legacy_fault),
+        surface_vertices(fault),
+        surface_vertices(reference_fault),
         rtol=0.0,
         atol=GEOMETRY_ATOL_KM,
     )
 
-    x_km, y_km = composed_fault.ll2xy(FAULT_LON, FAULT_LAT)
-    restored_lon, restored_lat = composed_fault.xy2ll(x_km, y_km)
+    x_km, y_km = fault.ll2xy(FAULT_LON, FAULT_LAT)
+    restored_lon, restored_lat = fault.xy2ll(x_km, y_km)
     assert_allclose(
         [restored_lon, restored_lat],
         [FAULT_LON, FAULT_LAT],

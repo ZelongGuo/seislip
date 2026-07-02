@@ -15,6 +15,22 @@
 
 Projected `x`/`y` values returned by `ll2xy()` are in kilometers.
 
+Create one transformer for a project or dataset, then pass it to domain objects:
+
+```python
+from seislip.crs import CoordinateTransformer
+from seislip import InSAR
+from seislip.fault import Fault, MultiFault
+
+transformer = CoordinateTransformer("project_crs", lon0=44.0, lat0=35.0)
+
+fault = Fault("fault1", transformer=transformer)
+insar = InSAR("track079", transformer=transformer)
+multifault = MultiFault("fault_system", transformer=transformer)
+```
+
+`Fault`, `InSAR`, and `MultiFault` do not accept separate `lon0`/`lat0` CRS parameters; CRS setup belongs in `CoordinateTransformer`.
+
 Cartesian and Fault Coordinate System:
 
 <center>

@@ -20,39 +20,50 @@ import math
 # seislip libs
 if __name__ == "__main__":
     sys.path.append("../")
-    from seislip.crs import CoordinateTransformer
+    from seislip.crs import CoordinateTransformer, init_coordinate_transformer_owner, transformer_property
     from seislip.fault.rectpatch import RectPatch
     from seislip.fault.tripatch import TriPatch
 else:
-    from ..crs import CoordinateTransformer
+    from ..crs import CoordinateTransformer, init_coordinate_transformer_owner, transformer_property
     from .rectpatch import RectPatch
     from .tripatch import TriPatch
 
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-class Fault(CoordinateTransformer):
+class Fault:
     """Constructing a Fault object with four corner coordinates (and central/centroid point coordinates).
 
     The object of this class would be used for meshing the fault plane into rectangle or triangle patches.
 
     Args:
         - name:                 Fault instance name
-        - lon0:                 longitude used for specifying the UTM zone
-        - lat0:                 latitude used for specifying the UTM zone
-        - ellps:                Optional, reference ellipsoid, default = "WGS84"
-        - utmzone:              Optional explicit UTM zone with hemisphere, e.g. "38N"
-        - transformer:          Optional CoordinateTransformer instance to share an existing CRS transformer
+        - transformer:          CoordinateTransformer instance defining the shared CRS
 
     Return:
         - None.
     """
-    def __init__(self, name, lon0=None, lat0=None, ellps="WGS84", utmzone=None, transformer=None):
-        if transformer is None:
-            super().__init__(name, lon0, lat0, ellps, utmzone)
-            self.transformer = self
-        else:
-            self.name = name
-            self._bind_transformer_state(transformer)
+    # CRS attributes are stored on ``self.transformer``. These properties let
+    # existing code keep using ``obj.utmzone`` / ``obj.lon0`` directly while
+    # avoiding duplicated CRS state on the domain object.
+    lon0 = transformer_property("lon0")
+    lat0 = transformer_property("lat0")
+    ellps = transformer_property("ellps")
+    wgs = transformer_property("wgs")
+    utm = transformer_property("utm")
+    proj2utm = transformer_property("proj2utm")
+    proj2wgs = transformer_property("proj2wgs")
+    utmzone = transformer_property("utmzone")
+
+    def ll2xy(self, lon, lat):
+        """Forward lon/lat conversion to the owned coordinate transformer."""
+        return self.transformer.ll2xy(lon, lat)
+
+    def xy2ll(self, x, y):
+        """Forward UTM-to-lon/lat conversion to the owned coordinate transformer."""
+        return self.transformer.xy2ll(x, y)
+
+    def __init__(self, name, transformer: CoordinateTransformer = None):
+        init_coordinate_transformer_owner(self, name, transformer)
 
         # fault parameters
         self.ucp = None   # UTM coordinates of central point on upper fault edge
@@ -405,7 +416,8 @@ class Fault(CoordinateTransformer):
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 if __name__ == "__main__":
 
-    fault = Fault("fault1", 44.28, 35.47)
+    transformer = CoordinateTransformer("fault_example_crs", lon0=44.28, lat0=35.47)
+    fault = Fault("fault1", transformer=transformer)
     # patch1, patch_corner1 = fault.initialize_planar_fault(lon_uc=44.344, lat_uc=35.603, verdepth_uc=3, strike=10, dip=45, length=80, width=50)
     fault.initialize_fault(pointpos="upper center", lon=44.344, lat=35.603, verdepth=0, strike=50, dip=45, length=180, width=30)
     # fault.plot(fault.patch_verts)
@@ -416,7 +428,7 @@ if __name__ == "__main__":
 
 
     # # --------------------------------------------
-    # fault = Fault("fault2", 44.28, 35.47)
+    # fault = Fault("fault2", transformer=transformer)
     # fault.initialize_fault(pointpos="upper center", lon=44.28, lat=35.47, verdepth=-5, strike=280, dip=70, length=10, width=10)
     # fault.plot(fault.patch_verts)
 

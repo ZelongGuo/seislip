@@ -21,16 +21,16 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 # seislip libs
 if __name__ == "__main__":
     sys.path.append("../")
-    from seislip.crs import CoordinateTransformer
+    from seislip.crs import CoordinateTransformer, init_coordinate_transformer_owner, transformer_property
     from seislip.fault.fault import Fault
     from seislip.fault.tripatch import TriPatch
 else:
-    from ..crs import CoordinateTransformer
+    from ..crs import CoordinateTransformer, init_coordinate_transformer_owner, transformer_property
     from .fault import Fault
     from .tripatch import TriPatch
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-class MultiFault(CoordinateTransformer):
+class MultiFault:
     """Container for multiple fault segments or curved fault surfaces.
 
     This class handles:
@@ -41,22 +41,33 @@ class MultiFault(CoordinateTransformer):
 
     Args:
         - name:                 Fault instance name
-        - lon0:                 longitude used for specifying utm zone
-        - lat0:                 latitude used for specifying utm zone
-        - ellps:                Optional, reference ellipsoid, default = "WGS84"
-        - utmzone:              Optional explicit UTM zone with hemisphere, e.g. "38N"
-        - transformer:          Optional CoordinateTransformer instance to share an existing CRS transformer
+        - transformer:          CoordinateTransformer instance defining the shared CRS
 
     Return:
         - None.
     """
-    def __init__(self, name, lon0=None, lat0=None, ellps="WGS84", utmzone=None, transformer=None):
-        if transformer is None:
-            super().__init__(name, lon0, lat0, ellps, utmzone)
-            self.transformer = self
-        else:
-            self.name = name
-            self._bind_transformer_state(transformer)
+    # CRS attributes are stored on ``self.transformer``. These properties let
+    # existing code keep using ``obj.utmzone`` / ``obj.lon0`` directly while
+    # avoiding duplicated CRS state on the domain object.
+    lon0 = transformer_property("lon0")
+    lat0 = transformer_property("lat0")
+    ellps = transformer_property("ellps")
+    wgs = transformer_property("wgs")
+    utm = transformer_property("utm")
+    proj2utm = transformer_property("proj2utm")
+    proj2wgs = transformer_property("proj2wgs")
+    utmzone = transformer_property("utmzone")
+
+    def ll2xy(self, lon, lat):
+        """Forward lon/lat conversion to the owned coordinate transformer."""
+        return self.transformer.ll2xy(lon, lat)
+
+    def xy2ll(self, x, y):
+        """Forward UTM-to-lon/lat conversion to the owned coordinate transformer."""
+        return self.transformer.xy2ll(x, y)
+
+    def __init__(self, name, transformer: CoordinateTransformer = None):
+        init_coordinate_transformer_owner(self, name, transformer)
 
         # fault segments (list of Fault objects)
         self.segments = []
@@ -440,7 +451,8 @@ if __name__ == "__main__":
     dips = [35, 45, 60, 50, 40]
     widths = [12, 12, 12, 12, 12]
 
-    mf = MultiFault("curved_example", lon0=44.0, lat0=35.0)
+    transformer = CoordinateTransformer("multifault_example_crs", lon0=44.0, lat0=35.0)
+    mf = MultiFault("curved_example", transformer=transformer)
     mf.from_trace_triangles(trace_points=trace_points, dips=dips, widths=widths)
     # Note: To plot the trace, call mf.discretize_triangles() first
     # mf.discretize_triangles(element_size=2.0)
@@ -461,7 +473,7 @@ if __name__ == "__main__":
     dips_rect = [45, 60, 30]  # 3 dips for 3 segments (4 points -> 3 segments)
     widths_rect = [12, 12, 12]  # 3 widths for 3 segments
 
-    mf2 = MultiFault("chained_example", lon0=44.0, lat0=35.0)
+    mf2 = MultiFault("chained_example", transformer=transformer)
     mf2.from_trace_rectangles(trace_points=trace_points_rect, dips=dips_rect, widths=widths_rect)
 
     # Discretize and plot examples

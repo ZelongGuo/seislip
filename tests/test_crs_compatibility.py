@@ -13,25 +13,17 @@ DOMAIN_CLASSES = (Fault, InSAR, MultiFault)
 
 
 @pytest.mark.parametrize("domain_cls", DOMAIN_CLASSES)
-def test_legacy_domain_objects_keep_direct_crs_api(domain_cls):
-    obj = domain_cls("legacy", lon0=44.0, lat0=35.0)
-
-    assert isinstance(obj, CoordinateTransformer)
-    assert obj.transformer is obj
-
-    x_km, y_km = obj.ll2xy(44.0, 35.0)
-    lon, lat = obj.xy2ll(x_km, y_km)
-
-    np.testing.assert_allclose(lon, 44.0, atol=1e-10, rtol=0.0)
-    np.testing.assert_allclose(lat, 35.0, atol=1e-10, rtol=0.0)
+def test_domain_objects_require_coordinate_transformer(domain_cls):
+    with pytest.raises(ValueError, match="CoordinateTransformer must be provided"):
+        domain_cls("missing-transformer")
 
 
 @pytest.mark.parametrize("domain_cls", DOMAIN_CLASSES)
-def test_composed_domain_objects_keep_direct_crs_api(domain_cls):
+def test_domain_objects_keep_direct_crs_api(domain_cls):
     transformer = CoordinateTransformer("shared", lon0=44.0, lat0=35.0)
     obj = domain_cls("composed", transformer=transformer)
 
-    assert isinstance(obj, CoordinateTransformer)
+    assert not isinstance(obj, CoordinateTransformer)
     assert obj.transformer is transformer
 
     x_km, y_km = obj.ll2xy(44.0, 35.0)
