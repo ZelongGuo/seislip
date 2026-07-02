@@ -43,6 +43,7 @@ class InSAR(GeoTrans):
         - lon0:     longitude of the UTM zone
         - lat0:     latitude of the UTM zone
         - ellps:    ellipsoid, default = "WGS84"
+        - transformer: optional GeoTrans instance to share an existing CRS transformer
 
     Return:
         None.
@@ -50,9 +51,22 @@ class InSAR(GeoTrans):
     """
 
     def __init__(self, name: str, lon0: Optional[float] = None, lat0: Optional[float] = None, ellps: str = "WGS 84",
-                 utmzone: Optional[str] = None) -> None:
+                 utmzone: Optional[str] = None, transformer: Optional[GeoTrans] = None) -> None:
         # call init function of the parent class to initialize
-        super().__init__(name, lon0, lat0, ellps, utmzone)
+        if transformer is None:
+            super().__init__(name, lon0, lat0, ellps, utmzone)
+            self.transformer = self
+        else:
+            self.name = name
+            self.transformer = transformer
+            self.lon0 = transformer.lon0
+            self.lat0 = transformer.lat0
+            self.ellps = transformer.ellps
+            self.wgs = transformer.wgs
+            self.utm = transformer.utm
+            self.proj2utm = transformer.proj2utm
+            self.proj2wgs = transformer.proj2wgs
+            self.utmzone = transformer.utmzone
 
         print("+-" * 50)
         print(f"Now we initialize the InSAR instance {self.name}...")

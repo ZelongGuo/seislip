@@ -44,13 +44,27 @@ class MultiFault(GeoTrans):
         - lon0:                 longitude used for specifying utm zone
         - lat0:                 latitude used for specifying utm zone
         - ellps:                Optional, reference ellipsoid, default = "WGS84"
-        - utmzone:              Optional, if not specify lon0, lat0 and ellps, default = None.
+        - utmzone:              Optional explicit UTM zone with hemisphere, e.g. "38N"
+        - transformer:          Optional GeoTrans instance to share an existing CRS transformer
 
     Return:
         - None.
     """
-    def __init__(self, name, lon0, lat0, ellps="WGS84", utmzone=None):
-        super().__init__(name, lon0, lat0, ellps, utmzone)
+    def __init__(self, name, lon0=None, lat0=None, ellps="WGS84", utmzone=None, transformer=None):
+        if transformer is None:
+            super().__init__(name, lon0, lat0, ellps, utmzone)
+            self.transformer = self
+        else:
+            self.name = name
+            self.transformer = transformer
+            self.lon0 = transformer.lon0
+            self.lat0 = transformer.lat0
+            self.ellps = transformer.ellps
+            self.wgs = transformer.wgs
+            self.utm = transformer.utm
+            self.proj2utm = transformer.proj2utm
+            self.proj2wgs = transformer.proj2wgs
+            self.utmzone = transformer.utmzone
 
         # fault segments (list of Fault objects)
         self.segments = []
@@ -224,9 +238,8 @@ class MultiFault(GeoTrans):
             # Calculate length (distance between uo and ue)
             length = np.sqrt(delta_x**2 + delta_y**2)
 
-            # Create Fault object for this segment
-            seg = Fault(f"{self.name}_seg{i+1}", self.lon0, self.lat0,
-                             self.ellps, self.utmzone)
+            # Create Fault object for this segment using the same CRS transformer.
+            seg = Fault(f"{self.name}_seg{i+1}", transformer=self.transformer)
             seg.initialize_fault(
                 pointpos="uo",
                 lon=uo_lon,
