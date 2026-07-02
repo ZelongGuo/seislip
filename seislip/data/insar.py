@@ -27,10 +27,10 @@ import warnings
 # SlipPy libs
 if __name__ == "__main__":
     sys.path.append("../")
-    from seislip.seislip import GeoTrans
+    from seislip.crs import GeoTrans
     from seislip.utils.quadtree import QTree
 else:
-    from ..seislip import GeoTrans
+    from ..crs import GeoTrans
     from ..utils.quadtree import QTree
 
 

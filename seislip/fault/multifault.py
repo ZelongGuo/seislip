@@ -21,11 +21,11 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 # seislip libs
 if __name__ == "__main__":
     sys.path.append("../")
-    from seislip.seislip import GeoTrans
+    from seislip.crs import GeoTrans
     from seislip.fault.fault import Fault
     from seislip.fault.tripatch import TriPatch
 else:
-    from ..seislip import GeoTrans
+    from ..crs import GeoTrans
     from .fault import Fault
     from .tripatch import TriPatch
 

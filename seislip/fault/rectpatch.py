@@ -22,11 +22,11 @@ if __name__ == "__main__":
     sys.path.append("../")
     # from seislip.fault.fault import Fault
     from seislip.utils.transformation import Transformation
-    from seislip.seislip import GeoTrans
+    from seislip.crs import GeoTrans
 else:
     # from .fault import Fault
     from ..utils.transformation import Transformation
-    from ..seislip import GeoTrans
+    from ..crs import GeoTrans
 
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-

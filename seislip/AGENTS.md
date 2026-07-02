@@ -7,7 +7,7 @@ It complements the repository-level `AGENTS.md`; prefer the more specific instru
 
 This package contains the importable SeiSlip library code:
 
-- `seislip.py`: `GeoTrans`, the base geographic/UTM coordinate transformer.
+- `crs.py`: `GeoTrans`, the base geographic/UTM coordinate transformer.
 - `data/`: InSAR readers, preprocessing, plotting, and downsampling entry points.
 - `fault/`: fault geometry, rectangular patches, triangular patches, and multi-segment faults.
 - `utils/`: reusable transformation, quadtree, and meshing utilities.

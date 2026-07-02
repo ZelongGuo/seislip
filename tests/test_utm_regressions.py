@@ -14,7 +14,7 @@ import pytest
 from numpy.testing import assert_allclose
 from pyproj import CRS, Transformer
 
-from seislip.seislip import GeoTrans
+from seislip.crs import GeoTrans
 
 
 # ===================================================================

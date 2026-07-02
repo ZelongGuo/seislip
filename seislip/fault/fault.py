@@ -20,11 +20,11 @@ import math
 # seislip libs
 if __name__ == "__main__":
     sys.path.append("../")
-    from seislip.seislip import GeoTrans
+    from seislip.crs import GeoTrans
     from seislip.fault.rectpatch import RectPatch
     from seislip.fault.tripatch import TriPatch
 else:
-    from ..seislip import GeoTrans
+    from ..crs import GeoTrans
     from .rectpatch import RectPatch
     from .tripatch import TriPatch
 

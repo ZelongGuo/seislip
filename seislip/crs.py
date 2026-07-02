@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-This is the base classes for SlipPy.
+Coordinate reference system helpers for SeiSlip.
+
+This module contains GeoTrans, the shared geographic/UTM transformer used by
+InSAR data readers and fault geometry classes.
 
 Created on Tue Nov. 21 2023
 @author: Zelong Guo

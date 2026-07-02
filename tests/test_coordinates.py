@@ -26,7 +26,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
-from seislip.seislip import GeoTrans
+from seislip.crs import GeoTrans
 
 
 # ---------------------------------------------------------------------------
