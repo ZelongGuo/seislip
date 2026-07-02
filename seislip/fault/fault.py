@@ -37,16 +37,30 @@ class Fault(GeoTrans):
 
     Args:
         - name:                 Fault instance name
-        - lon0:                 longitude used for specifying the utm zone
-        - lat0:                 lattitude used for specifying the utm zone
-        - ellps:                Optional, reference ellipsoid, defatult = "WGS84"
-        - utmzone:              Optional, if not specify lon0, lat0 and ellps, default = None.
+        - lon0:                 longitude used for specifying the UTM zone
+        - lat0:                 latitude used for specifying the UTM zone
+        - ellps:                Optional, reference ellipsoid, default = "WGS84"
+        - utmzone:              Optional explicit UTM zone with hemisphere, e.g. "38N"
+        - transformer:          Optional GeoTrans instance to share an existing CRS transformer
 
     Return:
         - None.
     """
-    def __init__(self, name, lon0, lat0, ellps="WGS84", utmzone=None):
-        super().__init__(name, lon0, lat0, ellps, utmzone)
+    def __init__(self, name, lon0=None, lat0=None, ellps="WGS84", utmzone=None, transformer=None):
+        if transformer is None:
+            super().__init__(name, lon0, lat0, ellps, utmzone)
+            self.transformer = self
+        else:
+            self.name = name
+            self.transformer = transformer
+            self.lon0 = transformer.lon0
+            self.lat0 = transformer.lat0
+            self.ellps = transformer.ellps
+            self.wgs = transformer.wgs
+            self.utm = transformer.utm
+            self.proj2utm = transformer.proj2utm
+            self.proj2wgs = transformer.proj2wgs
+            self.utmzone = transformer.utmzone
 
         # fault parameters
         self.ucp = None   # UTM coordinates of central point on upper fault edge

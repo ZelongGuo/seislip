@@ -63,6 +63,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
+from seislip.crs import GeoTrans
 from seislip.fault import Fault
 
 
@@ -209,6 +210,53 @@ def assert_vertices_lie_on_plane(
 
     # All distances must be zero — every vertex on the plane.
     assert_allclose(distances, 0.0, rtol=0.0, atol=GEOMETRY_ATOL_KM)
+
+
+# ===================================================================
+# CRS transformer composition
+# ===================================================================
+
+def test_fault_accepts_shared_coordinate_transformer() -> None:
+    """A composed CRS transformer must reproduce legacy fault geometry.
+
+    This locks the first migration step from inheritance-only CRS handling to
+    composition.  The old ``Fault(name, lon0, lat0)`` constructor remains valid,
+    while the new ``Fault(name, transformer=...)`` path should use the same CRS
+    and produce identical fault vertices for the same physical geometry.
+    """
+    legacy_fault = make_oblique_fault()
+
+    transformer = GeoTrans("shared-transformer", lon0=FAULT_LON, lat0=FAULT_LAT)
+    composed_fault = Fault("composed-fault", transformer=transformer)
+    composed_fault.initialize_fault(
+        pointpos="uc",
+        lon=FAULT_LON,
+        lat=FAULT_LAT,
+        verdepth=UPPER_DEPTH_KM,
+        strike=STRIKE_DEGREES,
+        dip=DIP_DEGREES,
+        length=FAULT_LENGTH_KM,
+        width=FAULT_WIDTH_KM,
+    )
+
+    assert composed_fault.transformer is transformer
+    assert composed_fault.utm == legacy_fault.utm
+    assert composed_fault.utmzone == legacy_fault.utmzone
+    assert_allclose(
+        surface_vertices(composed_fault),
+        surface_vertices(legacy_fault),
+        rtol=0.0,
+        atol=GEOMETRY_ATOL_KM,
+    )
+
+    x_km, y_km = composed_fault.ll2xy(FAULT_LON, FAULT_LAT)
+    restored_lon, restored_lat = composed_fault.xy2ll(x_km, y_km)
+    assert_allclose(
+        [restored_lon, restored_lat],
+        [FAULT_LON, FAULT_LAT],
+        rtol=0.0,
+        atol=1e-8,
+    )
 
 
 # ===================================================================
