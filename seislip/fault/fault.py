@@ -20,17 +20,17 @@ import math
 # seislip libs
 if __name__ == "__main__":
     sys.path.append("../")
-    from seislip.crs import GeoTrans
+    from seislip.crs import CoordinateTransformer
     from seislip.fault.rectpatch import RectPatch
     from seislip.fault.tripatch import TriPatch
 else:
-    from ..crs import GeoTrans
+    from ..crs import CoordinateTransformer
     from .rectpatch import RectPatch
     from .tripatch import TriPatch
 
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-class Fault(GeoTrans):
+class Fault(CoordinateTransformer):
     """Constructing a Fault object with four corner coordinates (and central/centroid point coordinates).
 
     The object of this class would be used for meshing the fault plane into rectangle or triangle patches.
@@ -41,7 +41,7 @@ class Fault(GeoTrans):
         - lat0:                 latitude used for specifying the UTM zone
         - ellps:                Optional, reference ellipsoid, default = "WGS84"
         - utmzone:              Optional explicit UTM zone with hemisphere, e.g. "38N"
-        - transformer:          Optional GeoTrans instance to share an existing CRS transformer
+        - transformer:          Optional CoordinateTransformer instance to share an existing CRS transformer
 
     Return:
         - None.

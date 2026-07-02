@@ -1,5 +1,5 @@
 """
-Tests for geographic ↔ UTM coordinate transformations (GeoTrans class).
+Tests for geographic ↔ UTM coordinate transformations (CoordinateTransformer class).
 
 These tests verify the core coordinate conversion that every other module
 (InSAR, Fault, MultiFault) depends on.  If these tests fail, all downstream
@@ -26,7 +26,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
-from seislip.crs import GeoTrans
+from seislip.crs import CoordinateTransformer
 
 
 # ---------------------------------------------------------------------------
@@ -48,15 +48,15 @@ ZONE_38_CENTRAL_MERIDIAN = 45.0
 # Fixture
 # ---------------------------------------------------------------------------
 
-def make_transformer() -> GeoTrans:
-    """Return a GeoTrans locked to UTM zone 38N (WGS84).
+def make_transformer() -> CoordinateTransformer:
+    """Return a CoordinateTransformer locked to UTM zone 38N (WGS84).
 
     We fix the zone explicitly rather than letting pyproj auto-select it.
     This keeps the tests deterministic — their outcome does not depend on
     the internal ordering of ``query_utm_crs_info``, which can vary across
     pyproj versions.
     """
-    return GeoTrans("test-coordinates", ellps="WGS84", utmzone="38N")
+    return CoordinateTransformer("test-coordinates", ellps="WGS84", utmzone="38N")
 
 
 # ===================================================================

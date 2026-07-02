@@ -1,5 +1,5 @@
 """
-Regression tests for previously fixed UTM-zone selection bugs in GeoTrans.
+Regression tests for previously fixed UTM-zone selection bugs in CoordinateTransformer.
 
 These tests guard two behaviours that have caused coordinate errors:
 
@@ -14,7 +14,7 @@ import pytest
 from numpy.testing import assert_allclose
 from pyproj import CRS, Transformer
 
-from seislip.crs import GeoTrans
+from seislip.crs import CoordinateTransformer
 
 
 # ===================================================================
@@ -49,7 +49,7 @@ def test_automatic_utm_zone_contains_reference_point() -> None:
     wider AoI and took the first intersecting CRS.
     """
     # lon0=1.5 → AoI lon ∈ [−0.5, 3.5] crosses the zone 30/31 boundary at 0°.
-    transformer = GeoTrans("automatic-zone", lon0=1.5, lat0=50.0)
+    transformer = CoordinateTransformer("automatic-zone", lon0=1.5, lat0=50.0)
 
     # The containing zone for lon=1.5° is zone 31 North.
     expected_crs = CRS.from_epsg(32631)
@@ -67,7 +67,7 @@ def test_explicit_southern_utm_zone_preserves_hemisphere() -> None:
 
     Setup
     -----
-    We create a ``GeoTrans`` with ``utmzone="36S"``.  The previous buggy
+    We create a ``CoordinateTransformer`` with ``utmzone="36S"``.  The previous buggy
     code path was::
 
         if isinstance(utmzone, str):
@@ -90,7 +90,7 @@ def test_explicit_southern_utm_zone_preserves_hemisphere() -> None:
     hemisphere will be offset by thousands of kilometres.
     """
     # Create transformer with explicit southern-hemisphere zone.
-    transformer = GeoTrans("southern-zone", ellps="WGS84", utmzone="36S")
+    transformer = CoordinateTransformer("southern-zone", ellps="WGS84", utmzone="36S")
 
     # The expected CRS: UTM zone 36, SOUTHERN hemisphere, WGS84.
     expected_crs = CRS.from_epsg(32736)
@@ -114,7 +114,7 @@ def test_explicit_southern_utm_zone_preserves_hemisphere() -> None:
     )
     expected_x_m, expected_y_m = expected_transformer.transform(lon, lat)
 
-    # Compare our GeoTrans output against the reference.
+    # Compare our CoordinateTransformer output against the reference.
     # NOTE: atol=1e-6 km = 1 mm — the projection itself is accurate to
     # ~1 mm, so this tolerance is appropriate.
     assert_allclose(
@@ -130,17 +130,10 @@ def test_explicit_southern_utm_zone_preserves_hemisphere() -> None:
 # ===================================================================
 
 def test_explicit_utm_zone_accepts_default_ellipsoid_name() -> None:
-    """The default ``ellps="WGS 84"`` must work for explicit UTM zones.
+    """The default ``ellps="WGS84"`` must work for explicit UTM zones."""
+    transformer = CoordinateTransformer("default-ellipsoid-explicit-zone", utmzone="38N")
 
-    Previous buggy behaviour
-    ------------------------
-    Explicit-zone initialization passed the display name ``"WGS 84"``
-    directly into a PROJ UTM constructor, which expects a compact token
-    such as ``"WGS84"``.  That made this otherwise valid call raise a
-    pyproj ``CRSError``.
-    """
-    transformer = GeoTrans("default-ellipsoid-explicit-zone", utmzone="38N")
-
+    assert transformer.ellps == "WGS84"
     assert transformer.utm == CRS.from_epsg(32638)
     assert transformer.utmzone == "38N"
 
@@ -153,13 +146,13 @@ def test_explicit_utm_zone_accepts_default_ellipsoid_name() -> None:
 def test_explicit_utm_zone_requires_number_and_hemisphere(utmzone) -> None:
     """Manual UTM zones must be explicit ``<zone><hemisphere>`` strings.
 
-    ``GeoTrans`` no longer guesses the hemisphere from ``lat0`` or from a
+    ``CoordinateTransformer`` no longer guesses the hemisphere from ``lat0`` or from a
     missing suffix.  Users who choose the manual path must specify ``N`` or
     ``S`` themselves, where the suffix means northern/southern hemisphere and
     not an MGRS latitude band.
     """
     with pytest.raises((TypeError, ValueError)):
-        GeoTrans("ambiguous-zone", utmzone=utmzone)
+        CoordinateTransformer("ambiguous-zone", utmzone=utmzone)
 
 
 # ===================================================================
@@ -177,10 +170,10 @@ def test_explicit_utm_zone_requires_number_and_hemisphere(utmzone) -> None:
 def test_automatic_utm_zone_requires_lon0_and_lat0(kwargs) -> None:
     """Automatic UTM selection needs both reference coordinates.
 
-    Without an explicit ``utmzone``, ``GeoTrans`` must know the reference
+    Without an explicit ``utmzone``, ``CoordinateTransformer`` must know the reference
     longitude and latitude so pyproj can select the UTM CRS containing that
     point.  Missing either coordinate is a caller error and should raise a
     clear ``ValueError`` rather than relying on Python ``assert`` statements.
     """
     with pytest.raises(ValueError, match="either an explicit utmzone"):
-        GeoTrans("missing-reference", **kwargs)
+        CoordinateTransformer("missing-reference", **kwargs)

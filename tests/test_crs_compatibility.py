@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from seislip.crs import GeoTrans
+from seislip.crs import CoordinateTransformer
 from seislip.data.insar import InSAR
 from seislip.fault.fault import Fault
 from seislip.fault.multifault import MultiFault
@@ -16,7 +16,7 @@ DOMAIN_CLASSES = (Fault, InSAR, MultiFault)
 def test_legacy_domain_objects_keep_direct_crs_api(domain_cls):
     obj = domain_cls("legacy", lon0=44.0, lat0=35.0)
 
-    assert isinstance(obj, GeoTrans)
+    assert isinstance(obj, CoordinateTransformer)
     assert obj.transformer is obj
 
     x_km, y_km = obj.ll2xy(44.0, 35.0)
@@ -28,10 +28,10 @@ def test_legacy_domain_objects_keep_direct_crs_api(domain_cls):
 
 @pytest.mark.parametrize("domain_cls", DOMAIN_CLASSES)
 def test_composed_domain_objects_keep_direct_crs_api(domain_cls):
-    transformer = GeoTrans("shared", lon0=44.0, lat0=35.0)
+    transformer = CoordinateTransformer("shared", lon0=44.0, lat0=35.0)
     obj = domain_cls("composed", transformer=transformer)
 
-    assert isinstance(obj, GeoTrans)
+    assert isinstance(obj, CoordinateTransformer)
     assert obj.transformer is transformer
 
     x_km, y_km = obj.ll2xy(44.0, 35.0)
@@ -43,7 +43,7 @@ def test_composed_domain_objects_keep_direct_crs_api(domain_cls):
 
 @pytest.mark.parametrize("domain_cls", DOMAIN_CLASSES)
 def test_composed_domain_objects_share_transformer_state(domain_cls):
-    transformer = GeoTrans("shared", lon0=44.0, lat0=35.0, utmzone="38N")
+    transformer = CoordinateTransformer("shared", lon0=44.0, lat0=35.0, utmzone="38N")
     obj = domain_cls("composed", transformer=transformer)
 
     for attr in ("lon0", "lat0", "ellps", "utmzone"):

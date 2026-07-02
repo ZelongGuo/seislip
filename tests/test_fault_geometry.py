@@ -63,7 +63,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
-from seislip.crs import GeoTrans
+from seislip.crs import CoordinateTransformer
 from seislip.fault import Fault
 
 
@@ -226,7 +226,7 @@ def test_fault_accepts_shared_coordinate_transformer() -> None:
     """
     legacy_fault = make_oblique_fault()
 
-    transformer = GeoTrans("shared-transformer", lon0=FAULT_LON, lat0=FAULT_LAT)
+    transformer = CoordinateTransformer("shared-transformer", lon0=FAULT_LON, lat0=FAULT_LAT)
     composed_fault = Fault("composed-fault", transformer=transformer)
     composed_fault.initialize_fault(
         pointpos="uc",

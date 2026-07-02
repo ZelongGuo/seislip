@@ -4,13 +4,13 @@ import numpy as np
 from numpy.testing import assert_allclose
 
 from seislip import InSAR
-from seislip.crs import GeoTrans
+from seislip.crs import CoordinateTransformer
 
 
 def test_insar_accepts_shared_coordinate_transformer(capsys) -> None:
     """A composed CRS transformer must match legacy InSAR coordinates."""
     legacy = InSAR("legacy-insar", lon0=44.0, lat0=35.0)
-    transformer = GeoTrans("shared-transformer", lon0=44.0, lat0=35.0)
+    transformer = CoordinateTransformer("shared-transformer", lon0=44.0, lat0=35.0)
     composed = InSAR("composed-insar", transformer=transformer)
     capsys.readouterr()
 

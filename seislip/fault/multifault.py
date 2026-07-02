@@ -21,16 +21,16 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 # seislip libs
 if __name__ == "__main__":
     sys.path.append("../")
-    from seislip.crs import GeoTrans
+    from seislip.crs import CoordinateTransformer
     from seislip.fault.fault import Fault
     from seislip.fault.tripatch import TriPatch
 else:
-    from ..crs import GeoTrans
+    from ..crs import CoordinateTransformer
     from .fault import Fault
     from .tripatch import TriPatch
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-class MultiFault(GeoTrans):
+class MultiFault(CoordinateTransformer):
     """Container for multiple fault segments or curved fault surfaces.
 
     This class handles:
@@ -45,7 +45,7 @@ class MultiFault(GeoTrans):
         - lat0:                 latitude used for specifying utm zone
         - ellps:                Optional, reference ellipsoid, default = "WGS84"
         - utmzone:              Optional explicit UTM zone with hemisphere, e.g. "38N"
-        - transformer:          Optional GeoTrans instance to share an existing CRS transformer
+        - transformer:          Optional CoordinateTransformer instance to share an existing CRS transformer
 
     Return:
         - None.

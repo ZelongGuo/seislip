@@ -27,15 +27,15 @@ import warnings
 # SlipPy libs
 if __name__ == "__main__":
     sys.path.append("../")
-    from seislip.crs import GeoTrans
+    from seislip.crs import CoordinateTransformer
     from seislip.utils.quadtree import QTree
 else:
-    from ..crs import GeoTrans
+    from ..crs import CoordinateTransformer
     from ..utils.quadtree import QTree
 
 
 # Insar Class
-class InSAR(GeoTrans):
+class InSAR(CoordinateTransformer):
     """Insar class for handling InSAR data.
 
     Args:
@@ -43,15 +43,15 @@ class InSAR(GeoTrans):
         - lon0:     longitude of the UTM zone
         - lat0:     latitude of the UTM zone
         - ellps:    ellipsoid, default = "WGS84"
-        - transformer: optional GeoTrans instance to share an existing CRS transformer
+        - transformer: optional CoordinateTransformer instance to share an existing CRS transformer
 
     Return:
         None.
 
     """
 
-    def __init__(self, name: str, lon0: Optional[float] = None, lat0: Optional[float] = None, ellps: str = "WGS 84",
-                 utmzone: Optional[str] = None, transformer: Optional[GeoTrans] = None) -> None:
+    def __init__(self, name: str, lon0: Optional[float] = None, lat0: Optional[float] = None, ellps: str = "WGS84",
+                 utmzone: Optional[str] = None, transformer: Optional[CoordinateTransformer] = None) -> None:
         # call init function of the parent class to initialize
         if transformer is None:
             super().__init__(name, lon0, lat0, ellps, utmzone)

@@ -2,13 +2,13 @@
 
 import numpy as np
 
-from seislip.crs import GeoTrans
+from seislip.crs import CoordinateTransformer
 from seislip.fault import MultiFault
 
 
 def test_multifault_passes_shared_transformer_to_segments(capsys) -> None:
     """Chained segment construction should preserve a shared CRS transformer."""
-    transformer = GeoTrans("shared-transformer", lon0=44.0, lat0=35.0)
+    transformer = CoordinateTransformer("shared-transformer", lon0=44.0, lat0=35.0)
     multifault = MultiFault("composed-multifault", transformer=transformer)
 
     trace_points = [

@@ -3,14 +3,12 @@
 """
 Coordinate reference system helpers for SeiSlip.
 
-This module contains GeoTrans, the shared geographic/UTM transformer used by
-InSAR data readers and fault geometry classes.
+This module contains CoordinateTransformer, the shared geographic/UTM transformer used by
+InSAR data readers and fault geometry classes etc.
 
 Created on Tue Nov. 21 2023
 @author: Zelong Guo
 """
-__author__ = "Zelong Guo"
-__version__ = "1.0.0"
 
 from typing import Optional, Tuple, Union
 import numpy as np
@@ -19,10 +17,10 @@ from pyproj.aoi import AreaOfInterest
 from pyproj.database import query_utm_crs_info
 
 
-class GeoTrans(object):
+class CoordinateTransformer(object):
     """Coordinate transformer between geographic lon/lat and projected UTM coordinates.
 
-    ``GeoTrans`` centralizes CRS selection and pyproj transformer setup for
+    ``CoordinateTransformer`` centralizes CRS selection and pyproj transformer setup for
     SeiSlip objects.  It is currently used as a base class by data and fault
     classes, but its core responsibility is coordinate transformation.
 
@@ -38,7 +36,7 @@ class GeoTrans(object):
         - name:     instance name of this parent class,
         - lon0:     longitude defining the center of the custom UTM zone,
         - lat0:     latitude defining the center of the custom UTM zone,
-        - ellps:    (optional, default is "WGS 84") reference ellipsoid of the data
+        - ellps:    (optional, default is "WGS84") reference ellipsoid of the data
         - utmzone:  (optional, default is None) explicit UTM zone with hemisphere, e.g. "38N".
 
     Return:
@@ -46,7 +44,7 @@ class GeoTrans(object):
 
     """
 
-    def __init__(self, name: str, lon0: Optional[float] = None, lat0: Optional[float] = None, ellps: str = "WGS 84",
+    def __init__(self, name: str, lon0: Optional[float] = None, lat0: Optional[float] = None, ellps: str = "WGS84",
                  utmzone: Optional[str] = None):
 
         self.name = name
@@ -58,10 +56,10 @@ class GeoTrans(object):
 
     # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 
-    def _bind_transformer_state(self, transformer: "GeoTrans") -> None:
+    def _bind_transformer_state(self, transformer: "CoordinateTransformer") -> None:
         """Bind this object to an existing coordinate transformer.
 
-        Domain objects still inherit from ``GeoTrans`` for compatibility, but
+        Domain objects still inherit from ``CoordinateTransformer`` for compatibility, but
         composed construction should share the CRS state from one transformer
         instead of repeating attribute-copy logic in every subclass.
         """
@@ -148,7 +146,7 @@ class GeoTrans(object):
 
     # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 
-    def __set_zone(self, lon0: Optional[float] = None, lat0: Optional[float] = None, ellps: str = "WGS 84",
+    def __set_zone(self, lon0: Optional[float] = None, lat0: Optional[float] = None, ellps: str = "WGS84",
                    utmzone: Optional[str] = None) -> None:
 
         """Sets the UTM zone in the class.
@@ -179,7 +177,7 @@ class GeoTrans(object):
         else:
             if lon0 is None or lat0 is None:
                 raise ValueError(
-                    "GeoTrans requires either an explicit utmzone such as '38N' "
+                    "CoordinateTransformer requires either an explicit utmzone such as '38N' "
                     "or both lon0 and lat0 for automatic UTM zone selection."
                 )
             # Find the zone containing the reference point.  Use a point-sized
@@ -251,7 +249,7 @@ class GeoTrans(object):
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 
 if __name__ == "__main__":
-    test = GeoTrans('TEST', -93, 43)
+    test = CoordinateTransformer('TEST', -93, 43)
 
     lonlat = np.array([[-90.2897635, 40.1467463],
                        [-91.4456356, 43.5353664],
